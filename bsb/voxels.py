@@ -614,7 +614,7 @@ class NrrdVoxelLoader(VoxelLoader, classmap_entry="nrrd"):
         dim_probs = [(s, d) for s, h in all_headers.items() if (d := h["dimension"]) != 3]
         if dim_probs:
             summ = ", ".join(f"'{s}' has {d}" for s, d in dim_probs)
-            raise ConfigurationError(f"NRRD voxels must contain 3D arrays; {summ}")
+            raise SpatialDimensionError(f"NRRD voxels must contain 3D arrays; {summ}")
         mask_sizes = {s: [*h["sizes"]] for s, h in mask_headers.items()}
         source_sizes = {s: [*h["sizes"]] for s, h in source_headers.items()}
         all_sizes = mask_sizes.copy()

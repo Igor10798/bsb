@@ -1,6 +1,8 @@
 import unittest
 import numpy as np
 import random
+import nrrd
+from bsb import voxels
 from bsb.voxels import VoxelSet, VoxelData
 from bsb.storage import Chunk
 from bsb.morphologies import Branch, Morphology
@@ -527,3 +529,28 @@ class TestVoxelData(unittest.TestCase):
 
     def test_getitem(self):
         VoxelData(np.array([1]), keys=["alpha"])[0]
+
+
+class TestVoxels(unittest.TestCase):
+    def test_wrong_dimensions(self):
+        _2dim_nrrd = "./sdata/two.nrrd"
+        with self.assertRaises(SpatialDimensionError):
+            voxels.NrrdVoxelLoader(
+                type="nrrd", source=_2dim_nrrd, voxel_size=[25.0, 25.0, 25.0]
+            ).boot()
+
+    def test_wrong_config(self):
+        standard_nrrd = "./data/two.nrrd"
+        with self.assertRaises(ConfigurationError):
+            voxels.NrrdVoxelLoader(source=standard_nrrd).boot()
+
+    def test_sparseness(self):
+        sparse_nrrd = "./data/empty.nrrd"
+        self.assertTrue(
+            voxels.NrrdVoxelLoader(
+                type="nrrd", source=sparse_nrrd, voxel_size=[25.0, 25.0, 25.0]
+            ).sparse
+        )
+
+    def test_empty_nrrd(self):
+        pass
