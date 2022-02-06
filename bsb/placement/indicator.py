@@ -13,6 +13,7 @@ class PlacementIndications:
     density_ratio = config.attr(type=float)
     relative_to = config.ref(refs.cell_type_ref)
     count = config.attr(type=int)
+    has_voxel_density = config.attr(type=bool)
 
 
 class _Noner:
@@ -59,6 +60,9 @@ class PlacementIndicator:
         relative_to = self.indication("relative_to")
         density_ratio = self.indication("density_ratio")
         count_ratio = self.indication("count_ratio")
+        voxel_density = self.indication("has_voxel_density")
+        if voxel_density:
+            self._vdensity_to_estim(chunk)
         if count is not None:
             estimate = self._estim_for_chunk(chunk, count)
         if density is not None:
@@ -106,6 +110,10 @@ class PlacementIndicator:
             raise IndicatorError(
                 f"No configuration indicators found for the number of '{self._cell_type.name}' in '{self._strat.name}'"
             )
+
+    def _vdensity_to_estim(self, chunk=None):
+        voxels = (p.chunk_to_voxels(chunk) for p in self._strat.partitions)
+        print(sum(v[self.cell_type["name"] + "_density"] for v in voxels))
 
     def _density_to_estim(self, density, chunk=None):
         return sum(p.volume(chunk) * density for p in self._strat.partitions)
