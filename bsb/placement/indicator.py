@@ -62,7 +62,7 @@ class PlacementIndicator:
         count_ratio = self.indication("count_ratio")
         voxel_density = self.indication("has_voxel_density")
         if voxel_density:
-            self._vdensity_to_estim(chunk)
+            estimate = self._vdensity_to_estim(chunk)
         if count is not None:
             estimate = self._estim_for_chunk(chunk, count)
         if density is not None:
@@ -112,8 +112,14 @@ class PlacementIndicator:
             )
 
     def _vdensity_to_estim(self, chunk=None):
-        voxels = (p.chunk_to_voxels(chunk) for p in self._strat.partitions)
-        print(sum(v[self.cell_type["name"] + "_density"] for v in voxels))
+        return np.sum(
+            [
+                p.chunk_to_voxels(chunk)[self.cell_type["name"] + "_density"].data
+                for p in self._strat.partitions
+            ]
+        )
+        # print(voxels)
+        # print(sum(v[self.cell_type["name"] + "_density"] for v in voxels))
 
     def _density_to_estim(self, density, chunk=None):
         return sum(p.volume(chunk) * density for p in self._strat.partitions)

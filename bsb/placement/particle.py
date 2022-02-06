@@ -46,8 +46,9 @@ class ParticlePlacement(PlacementStrategy):
                 for name, indicator in indicators.items():
                     pruned = pruned_per_type[name]
                     total = indicator.guess(chunk)
-                    pct = int((pruned / total) * 100)
-                    report(f"{pruned} {name} ({pct}%) cells pruned.")
+                    if total > 0:
+                        pct = int((pruned / total) * 100)
+                        report(f"{pruned} {name} ({pct}%) cells pruned.")
 
         for pt in system.particle_types:
             cell_type = self.scaffold.cell_types[pt["name"]]
