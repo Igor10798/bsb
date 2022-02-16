@@ -112,6 +112,9 @@ class PlacementIndicator:
             )
 
     def _vdensity_to_estim(self, chunk=None):
+        # TODO: think of a better way to compute the density instead
+        # of simply summing the densities
+        # NOTE: chunk could be 'None' so this implementation is "risky"
         return np.sum(
             [
                 p.chunk_to_voxels(chunk)[self.cell_type["name"] + "_density"].data

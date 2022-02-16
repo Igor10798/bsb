@@ -3,14 +3,14 @@ import numpy as np
 import random
 import nrrd
 from bsb import voxels
-from bsb.voxels import VoxelSet, VoxelData
+from bsb.voxels import NrrdVoxelLoader, VoxelSet, VoxelData
 from bsb.storage import Chunk
 from bsb.morphologies import Branch, Morphology
 from bsb.exceptions import *
 from itertools import count as _ico, chain as _ic
 
 
-class TestVoxelSet(unittest.TestCase):
+class TestsNumpy:
     def assertClose(self, a, b, msg="", /, **kwargs):
         return self.assertTrue(np.allclose(a, b, **kwargs), f"Expected {a}, got {b}")
 
@@ -21,6 +21,8 @@ class TestVoxelSet(unittest.TestCase):
             np.all(a, **kwargs), f"{msg}. Only {trues} out of {all} True"
         )
 
+
+class TestVoxelSet(TestsNumpy, unittest.TestCase):
     def setUp(self):
         vs = VoxelSet
         self.regulars = [
@@ -531,21 +533,22 @@ class TestVoxelData(unittest.TestCase):
         VoxelData(np.array([1]), keys=["alpha"])[0]
 
 
-class TestVoxels(unittest.TestCase):
+class TestVoxels(TestsNumpy, unittest.TestCase):
     def test_wrong_dimensions(self):
-        _2dim_nrrd = "./sdata/two.nrrd"
+        _2dim_nrrd = "./data/two.nrrd"
         with self.assertRaises(SpatialDimensionError):
             voxels.NrrdVoxelLoader(
                 type="nrrd", source=_2dim_nrrd, voxel_size=[25.0, 25.0, 25.0]
-            ).boot()
+            ).get_voxelset()
 
     def test_wrong_config(self):
         standard_nrrd = "./data/two.nrrd"
         with self.assertRaises(ConfigurationError):
-            voxels.NrrdVoxelLoader(source=standard_nrrd).boot()
+            voxels.NrrdVoxelLoader(source=standard_nrrd).get_voxelset()
 
     def test_sparseness(self):
-        sparse_nrrd = "./data/empty.nrrd"
+        # An NRRD with few non-zeros element should be sparse
+        sparse_nrrd = "./data/sparse.nrrd"
         self.assertTrue(
             voxels.NrrdVoxelLoader(
                 type="nrrd", source=sparse_nrrd, voxel_size=[25.0, 25.0, 25.0]
@@ -553,4 +556,19 @@ class TestVoxels(unittest.TestCase):
         )
 
     def test_empty_nrrd(self):
+        # An NRRD full of zeroes should become an empty VoxelSet
+        empty_nrrd = "./data/empty.nrrd"
+        voxelset = voxels.NrrdVoxelLoader(
+            type="nrrd", source=empty_nrrd, voxel_size=[25.0, 25.0, 25.0]
+        ).get_voxelset()
+        self.assertTrue(voxelset.is_empty)
+
+    def test_density_conversions(self):
+        # Unit-less densities should be able to be converted to any
+        # unit of measurement
+        mixed_nrrd = "./data/mixed.nrrd"
+        voxelset = voxels.NrrdVoxelLoader(
+            type="nrrd", source=mixed_nrrd, voxel_size=[25.0, 25.0, 25.0]
+        ).get_voxelset()
+        self.assertEqual(1.5, np.sum(voxelset) / len(voxelset))
         pass

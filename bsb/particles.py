@@ -126,23 +126,44 @@ class ParticleSystem:
         # Reset particles
         self.particles = []
         for particle_type in self.particle_types:
-            radius = particle_type["radius"]
-            placement_voxels = particle_type["voxels"]
-            particle_count = particle_type["count"]
-            # Generate a matrix with random positions for the particles
-            # Add an extra dimension to determine in which voxels to place the particles
-            placement_matrix = np.random.rand(particle_count, self.dimensions + 1)
-            # Generate each particle
+            if "count" in particle_type:
+                self._fill_by_count(particle_type)
+            elif "densities" in particle_type:
+                self._fill_by_densities(particle_type)
+
+    def _fill_by_densities(self, particle_type):
+        voxels = self.voxels
+        radius = particle_type["radius"]
+        densities = particle_type["densities"]
+        for voxel, density in zip(voxels, densities):
+            particle_count = int(density * np.product(voxel.size)) + (
+                np.random.rand() < density * np.product(voxel.size) % 1
+            )
+            placement_matrix = np.random.rand(particle_count, self.dimensions)
             for positions in placement_matrix:
-                # Determine the voxel to be placed in.
-                particle_voxel_id = int(positions[0] * len(placement_voxels))
-                particle_voxel = self.voxels[placement_voxels[particle_voxel_id]]
                 # Translate the particle into the voxel based on the remaining dimensions
-                particle_position = (
-                    particle_voxel.origin + positions[1:] * particle_voxel.size
-                )
+                particle_position = voxel.origin + positions * voxel.size
                 # Store the particle object
                 self.add_particle(radius, particle_position, type=particle_type)
+
+    def _fill_by_count(self, particle_type):
+        radius = particle_type["radius"]
+        placement_voxels = particle_type["voxels"]
+        particle_count = particle_type["count"]
+        # Generate a matrix with random positions for the particles
+        # Add an extra dimension to determine in which voxels to place the particles
+        placement_matrix = np.random.rand(particle_count, self.dimensions + 1)
+        # Generate each particle
+        for positions in placement_matrix:
+            # Determine the voxel to be placed in.
+            particle_voxel_id = int(positions[0] * len(placement_voxels))
+            particle_voxel = self.voxels[placement_voxels[particle_voxel_id]]
+            # Translate the particle into the voxel based on the remaining dimensions
+            particle_position = (
+                particle_voxel.origin + positions[1:] * particle_voxel.size
+            )
+            # Store the particle object
+            self.add_particle(radius, particle_position, type=particle_type)
 
     def freeze(self):
         self.__frozen_positions = np.array([p.position for p in self.particles])

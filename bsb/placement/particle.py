@@ -17,17 +17,30 @@ class ParticlePlacement(PlacementStrategy):
         voxels = VoxelSet.concatenate(
             *(p.chunk_to_voxels(chunk) for p in self.partitions)
         )
+        particles = []
         # Define the particles for the particle system.
-        particles = [
-            {
-                "name": name,
-                # Place particles in all voxels
-                "voxels": list(range(len(voxels))),
-                "radius": indicator.get_radius(),
-                "count": int(indicator.guess(chunk)),
-            }
-            for name, indicator in indicators.items()
-        ]
+        for name, indicator in indicators.items():
+            per_voxel = indicator.indication("has_voxel_density")
+            data_key = f"{name}_density"
+            if per_voxel:
+                if data_key not in voxels.data_keys:
+                    raise Exception(f"Missing voxelized densities for {name}")
+                voxel_densities = voxels.data[data_key]
+                particle_type = {
+                    "name": name,
+                    "voxels": list(range(len(voxels))),
+                    "radius": indicator.get_radius(),
+                    "densities": voxel_densities,
+                }
+            else:
+                particle_type = {
+                    "name": name,
+                    "voxels": list(range(len(voxels))),
+                    "radius": indicator.get_radius(),
+                    "count": int(indicator.guess(chunk)),
+                }
+            particles.append(particle_type)
+
         # Create and fill the particle system.
         system = ParticleSystem(track_displaced=True, scaffold=self.scaffold)
         system.fill(voxels, particles)
